@@ -37,7 +37,7 @@ if fs:
     target_vec = vecs[idx]
 
     fcol2.image(Image.open(root + st.session_state["disp_img"]))
-    top5 = cdist(target_vec[None, ...], vecs).squeeze().argsort()[1:6]
+    top5 = cdist(target_vec[None, ...], vecs, metric='cosine').squeeze().argsort()[1:6]
     c1.image(Image.open(root + names[top5[0]]))
     c2.image(Image.open(root + names[top5[1]]))
     c3.image(Image.open(root + names[top5[2]]))
