@@ -4,43 +4,37 @@ from PIL import Image
 import time
 from scipy.spatial.distance import cdist
 
+
+root = "/Users/kevinadmin/Desktop/PlanktoScope Processing/Test/export_12581_20240719_1809/LUMCON Oyster Larvae Sampling 2024-04-25_1/"
+
 @st.cache_data
 def read_data():
-    all_vecs = np.load("all_vecs.npy")
-    all_names = np.load("all_names.npy")
-    return all_vecs , all_names
+    all_vecs = np.load(f"{root}/all_vecs.npy")
+    all_names = np.load(f"{root}/all_names.npy")
+    return all_vecs, all_names
 
-vecs , names = read_data()
 
-_ , fcol2 , _ = st.columns(3)
+vecs, names = read_data()
 
-scol1 , scol2 = st.columns(2)
+_, fcol2, _ = st.columns(3)
 
-ch = scol1.button("Start / change")
+scol1, scol2 = st.columns(2)
+
+ch = scol1.button("start / change")
 fs = scol2.button("find similar")
 
+
 if ch:
-    random_name = names[np.random.randint(len(names))]
-    fcol2.image(Image.open("./images/" + random_name))
-    st.session_state["disp_img"] = random_name
+    # random_name = names[np.random.randint(len(names))]
+    # image_name = random_name
+    image_name = '2024-04-25_21-22-41-731183_8.jpg'
+    fcol2.image(Image.open(root + image_name))
+    st.session_state["disp_img"] = image_name
     st.write(st.session_state["disp_img"])
 if fs:
-    c1 , c2 , c3 , c4 , c5 = st.columns(5)
+    c1, c2, c3, c4, c5 = st.columns(5)
     idx = int(np.argwhere(names == st.session_state["disp_img"]))
     target_vec = vecs[idx]
-    fcol2.image(Image.open("./images/" + st.session_state["disp_img"]))
-    top5 = cdist(target_vec[None , ...] , vecs).squeeze().argsort()[1:6]
-    c1.image(Image.open("./images/" + names[top5[0]]))
-    c2.image(Image.open("./images/" + names[top5[1]]))
-    c3.image(Image.open("./images/" + names[top5[2]]))
-    c4.image(Image.open("./images/" + names[top5[3]]))
-    c5.image(Image.open("./images/" + names[top5[4]]))
-
-
-
-
-
-
 
 
 
