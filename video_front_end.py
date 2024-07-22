@@ -36,6 +36,20 @@ if fs:
     idx = int(np.argwhere(names == st.session_state["disp_img"]))
     target_vec = vecs[idx]
 
+    fcol2.image(Image.open(root + st.session_state["disp_img"]))
+    top5 = cdist(target_vec[None, ...], vecs).squeeze().argsort()[1:6]
+    c1.image(Image.open(root + names[top5[0]]))
+    c2.image(Image.open(root + names[top5[1]]))
+    c3.image(Image.open(root + names[top5[2]]))
+    c4.image(Image.open(root + names[top5[3]]))
+    c5.image(Image.open(root + names[top5[4]]))
+
+    # Show image names
+    c1.text(names[top5[0]])
+    c2.text(names[top5[1]])
+    c3.text(names[top5[2]])
+    c4.text(names[top5[3]])
+    c5.text(names[top5[4]])
 
 
 
