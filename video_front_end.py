@@ -1,7 +1,7 @@
 import streamlit as st
 import numpy as np
+import pandas as pd
 from PIL import Image
-import time
 from scipy.spatial.distance import cdist
 
 
@@ -39,7 +39,7 @@ try:
     target_vec = vecs[idx]
 
     distances = cdist(target_vec[None, ...], vecs, metric='cosine').squeeze()
-    top_images = distances.argsort()[range(n_rows*n_cols + 1)]
+    top_images = distances.argsort()[range(n_rows*n_cols)]
     top_image_names = names[top_images]
     top_image_names = np.array([image_name.replace('.jpg', '') for image_name in top_image_names])
     top_distances = distances[top_images]
@@ -59,7 +59,11 @@ try:
         submit = st.form_submit_button()
         if submit:
             # st.write(checks)
-            st.write(top_image_names[checks])
+            selected_images = pd.Series(top_image_names[checks], name=f'similar images for {name}')
+            # selected_images = pd.Series(np.array(name, top_image_names[checks]), name='image names')
+            # pd.concat([name, selected_images], ignore_index=True)
+            st.caption('selected images:')
+            st.dataframe(selected_images, hide_index=True)
 
 except Exception as e:
     # fcol3.caption('Invalid image name')
