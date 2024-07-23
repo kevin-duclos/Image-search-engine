@@ -16,10 +16,12 @@ def read_data(root):
 st.title('Find similar images')
 
 # root = '/Users/kevinadmin/Desktop/PlanktoScope Processing/Test/export_12581_20240719_1809/LUMCON Oyster Larvae Sampling 2024-04-25_1'
-root = st.text_input("File path", "/Users/kevinadmin/Desktop/PlanktoScope Processing/Test/export_12581_20240719_1809/LUMCON Oyster Larvae Sampling 2024-04-25_1")
+# root = st.text_input("File path", "/Users/kevinadmin/Desktop/PlanktoScope Processing/Test/export_12581_20240719_1809/LUMCON Oyster Larvae Sampling 2024-04-25_1")
+st.session_state["filepath"] = st.text_input("File path", "")
+
 try:
-    vecs, names = read_data(root)
-    st.subheader(path.basename(root))
+    vecs, names = read_data(st.session_state["filepath"])
+    st.subheader(st.session_state["filepath"])
 except Exception as e:
     st.warning(e)
 
@@ -27,10 +29,10 @@ except Exception as e:
 top_cols = st.columns(3)
 image_name = st.text_input("Image name", "2024-04-25_21-22-41-731183_8")
 image_name = image_name + '.jpg'
+st.session_state["disp_img"] = image_name
 
 try:
-    img = Image.open(path.join(root, image_name))
-    st.session_state["disp_img"] = image_name
+    img = Image.open(path.join(st.session_state["filepath"], st.session_state["disp_img"]))
     top_cols[1].image(img)
 except Exception as e:
     st.warning(e)
@@ -62,7 +64,7 @@ with st.form(key='image-form'):
         tile.caption(f'{name}')
         tile.caption(f'distance: {distance:.4f}')
         try:
-            tile.image(Image.open(path.join(root, names[top_images[i]])))
+            tile.image(Image.open(path.join(st.session_state["filepath"], names[top_images[i]])))
         except Exception as e:
             st.warning(e)
         checks[i] = tile.checkbox('selected', key=f'check-{i}')
