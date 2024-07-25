@@ -9,7 +9,7 @@ from scipy.spatial.distance import cdist
 
 
 # %%
-# @st.cache_data
+@st.cache_data
 def read_data(root):
     all_vecs = np.load(f"{root}/all_vecs.npy")
     all_names = np.load(f"{root}/all_names.npy")
@@ -39,55 +39,80 @@ def get_similar_images(vecs, names, search_image_name, n_images):
     idx = int(np.argwhere(all_names == search_image_name).squeeze())
     target_vec = vecs[idx]
     distances = cdist(target_vec[None, ...], vecs, metric='cosine').squeeze()
-    top_images = distances.argsort()[range(n_images)]
-    top_image_names = names[top_images]
+    top_image_indices = distances.argsort()[range(n_images)]
+    top_image_names = names[top_image_indices]
     top_image_names = np.array([image_name.replace('.jpg', '') for image_name in top_image_names])
-    top_image_distances = distances[top_images]
-    return top_images, top_image_names, top_image_distances
+    top_image_distances = distances[top_image_indices]
+    top_images = pd.DataFrame(data={'index': top_image_indices, 'name': top_image_names, 'distance': top_image_distances})
+    return top_images
 
-top_images, top_image_names, top_image_distances = get_similar_images(all_vecs, all_names, search_image_names[50], 50)
 
-# %%
-# image_name = '2024-04-25_21-22-41-731183_8.jpg'
-top_cols = st.columns(3)
-st.session_state["disp_img"] = st.text_input("Image name", "2024-04-25_21-22-41-731183_8")
+# %% Get similar images for all search images
+@st.cache_data
+def get_all_similar_images(search_image_names, n_images):
+    all_top_images = []
+    for search_image_name in search_image_names:
+        top_images = get_similar_images(all_vecs, all_names, search_image_name, n_images)
+        all_top_images.append(top_images)
 
-try:
-    img = Image.open(path.join(st.session_state["filepath_in"], st.session_state["disp_img"] + '.jpg'))
-    top_cols[1].image(img)
-except Exception as e:
-    st.warning(e)
+    all_top_images = pd.concat(all_top_images)
 
-n_rows = 25
+    # Remove duplicates
+    all_top_images.drop_duplicates(subset=['name'], inplace=True)
+
+    # Sort by distance
+    all_top_images.sort_values(by='distance', inplace=True)
+    all_top_images.reset_index(inplace=True)
+    return all_top_images
+
+all_top_images = get_all_similar_images(search_image_names, 30)
+
+# %% Show matching images
+def display_images(image_names, n_rows, n_cols, id, image_distances=None):
+    # Make layout
+    cols = []
+    for _ in range(n_rows):
+        rows = st.columns(n_cols)
+        cols.extend(rows)
+
+    checks = [None] * len(cols)
+    with st.form(key=f'image-form-{id}'):
+        for i, col in enumerate(cols):
+            name = image_names[i]
+            tile = col.container(height=350, border=True)
+            tile.caption(f'{name}')
+
+            if image_distances is not None:
+                distance = image_distances[i]
+                tile.caption(f'distance: {distance:.4f}')
+
+            try:
+                tile.image(Image.open(path.join(st.session_state["filepath_in"], name + '.jpg')))
+            except Exception as e:
+                st.warning(e)
+            checks[i] = tile.checkbox('selected', key=f'check-{id}-{i}')
+        submit = st.form_submit_button()
+        if submit:
+            selected_images = pd.Series(image_names[checks], name=f'selected images')
+            st.caption('selected images:')
+            st.dataframe(selected_images, hide_index=True)
+
+
+# %% Show search images
+n_rows = 10
 n_cols = 4
-cols = []
-for _ in range(n_rows):
-    rows = st.columns(n_cols)
-    cols.extend(rows)
 
-top_images, top_image_names, top_image_distances = get_similar_images(all_vecs, all_names, st.session_state["disp_img"], n_rows*n_cols)
+# top_image_names = all_top_images['name'].to_numpy()[:n_rows*n_cols]
+# top_image_distances = all_top_images['distance'].to_numpy()[:n_rows*n_cols]
+st.subheader('Search images')
+display_images(search_image_names, n_rows, n_cols,'search')
 
-# Show images
-checks = [None] * len(cols)
-with st.form(key='image-form'):
-    for i, col in enumerate(cols):
-        name = top_image_names[i]
-        distance = top_image_distances[i]
+# %% Show similar images
+n_rows = 10
+n_cols = 4
 
-        tile = col.container(height=350, border=True)
-        tile.caption(f'{name}')
-        tile.caption(f'distance: {distance:.4f}')
-        try:
-            # tile.image(Image.open(path.join(st.session_state["filepath_in"], names[top_images[i]])))
-            tile.image(Image.open(path.join(st.session_state["filepath_in"], name + '.jpg')))
-        except Exception as e:
-            st.warning(e)
-        checks[i] = tile.checkbox('selected', key=f'check-{i}')
-    submit = st.form_submit_button()
-    if submit:
-        # st.write(checks)
-        selected_images = pd.Series(top_image_names[checks], name=f'similar images for {name}')
-        # selected_images = pd.Series(np.array(name, top_image_names[checks]), name='image names')
-        # pd.concat([name, selected_images], ignore_index=True)
-        st.caption('selected images:')
-        st.dataframe(selected_images, hide_index=True)
+top_image_names = all_top_images['name'].to_numpy()[:n_rows*n_cols]
+top_image_distances = all_top_images['distance'].to_numpy()[:n_rows*n_cols]
+
+st.subheader('Similar images')
+display_images(top_image_names, n_rows, n_cols, 'top', top_image_distances)
