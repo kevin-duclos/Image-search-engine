@@ -10,8 +10,12 @@ from torchvision import transforms
 root = "/Users/kevinadmin/Desktop/PlanktoScope Processing/Test/export_12581_20240719_1809/LUMCON Oyster Larvae Sampling 2024-04-25_1/"
 images = os.listdir(root)
 
+device = 'mps'
+
 os.environ["TORCH_HOME"] = "model/model_weights_edir"
 model = torchvision.models.resnet18(weights="DEFAULT")
+model.to(device)
+
 
 all_names = []
 all_vecs = None
@@ -38,7 +42,7 @@ with torch.no_grad():
             img = Image.open(root + file)
             img = transform(img)
             out = model(img[None, ...])
-            vec = activation["avgpool"].numpy().squeeze()[None, ...]
+            vec = activation["avgpool"].cpu().numpy().squeeze()[None, ...]
             if all_vecs is None:
                 all_vecs = vec
             else:
