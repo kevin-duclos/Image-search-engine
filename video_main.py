@@ -37,7 +37,7 @@ model.avgpool.register_forward_hook(get_activation("avgpool"))
 
 # %%
 with torch.no_grad():
-    for i, file in enumerate(images):
+    for i, file in enumerate(tqdm(images)):
         try:
             img = Image.open(root + file)
             img = transform(img)
