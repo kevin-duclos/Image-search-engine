@@ -1,16 +1,19 @@
 import os
+from glob import glob
 from PIL import Image
 import numpy as np
+from tqdm import tqdm
 
 import torch
 import torch.nn as nn
 import torchvision
 from torchvision import transforms
 
-root = "/Users/kevinadmin/Desktop/PlanktoScope Processing/Test/export_12581_20240719_1809/LUMCON Oyster Larvae Sampling 2024-04-25_1/"
-images = os.listdir(root)
 
 device = 'mps'
+root = "/Users/kevinadmin/Desktop/Image Similarity/LUMCON Oyster Larvae Sampling 2024-05-02_1/"
+# images = os.listdir(root)
+images = glob(root + '*.jpg')
 
 os.environ["TORCH_HOME"] = "model/model_weights_edir"
 model = torchvision.models.resnet18(weights="DEFAULT")
@@ -28,10 +31,13 @@ transform = transforms.Compose([
 ])
 
 activation = {}
+
+
 def get_activation(name):
     def hook(model, input, output):
         activation[name] = output.detach()
     return hook
+
 
 model.avgpool.register_forward_hook(get_activation("avgpool"))
 
@@ -39,33 +45,24 @@ model.avgpool.register_forward_hook(get_activation("avgpool"))
 with torch.no_grad():
     for i, file in enumerate(tqdm(images)):
         try:
-            img = Image.open(root + file)
+            img = Image.open(file)
             img = transform(img)
+            img = img.to(device)
             out = model(img[None, ...])
             vec = activation["avgpool"].cpu().numpy().squeeze()[None, ...]
             if all_vecs is None:
                 all_vecs = vec
             else:
                 all_vecs = np.vstack([all_vecs, vec])
-            all_names.append(file)
-        except :
-            print('Error')
+            image_name = os.path.basename(file)
+            all_names.append(image_name)
+        except Exception as e:
+            print(e)
 
-            continue
-        if i % 100 == 0 and i != 0:
-            print(i, "done")
+        # if i % 100 == 0 and i != 0:
+        #     print(i, "done")
 
 # %% Save data
-np.save(f"{root}/all_vecs.npy", all_vecs)
-np.save(f"{root}/all_names.npy", all_names)
-
-
-
-
-
-
-
-
-
-
-
+np.save(f"{root}/data/all_vecs.npy", all_vecs)
+np.save(f"{root}/data/all_names.npy", all_names)
+print('Exported data')
