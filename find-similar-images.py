@@ -14,21 +14,24 @@ def read_data(root, search_image_path):
     all_vecs = np.load(f"{root}/data/all_vecs.npy")
     all_names = np.load(f"{root}/data/all_names.npy")
     all_names = np.array([image_name.replace('.jpg', '') for image_name in all_names])
-    # search_image_path = glob(f"{root}/data/ecotaxa*.tsv")[0]
-    search_image_data = read_tsv(search_image_path)
-    search_image_names = search_image_data['object_id'].to_numpy()
+    # Get search images
+    # search_image_data = read_tsv(search_image_path)
+    # search_image_names = search_image_data['object_id'].to_numpy()
+    # search_image_names = np.array([image_name.replace('.jpg', '') for image_name in search_image_names])
+    search_image_vecs = np.load(f"{search_image_path}/data/all_vecs.npy")
+    search_image_names = np.load(f"{search_image_path}/data/all_names.npy")
     search_image_names = np.array([image_name.replace('.jpg', '') for image_name in search_image_names])
-
-    return all_vecs, all_names, search_image_names
+    return all_vecs, all_names, search_image_vecs, search_image_names
 
 st.title('Plankton picker')
 # st.session_state["filepath_in"] = st.text_input("File path", "")
 st.session_state["filepath_images"] = st.text_input("Images path", "/Users/kevinadmin/Desktop/Image Similarity/LUMCON Oyster Larvae Sampling 2024-05-02_1")
-st.session_state["filepath_search"] = st.text_input("EcoTaxa path", "/Users/kevinadmin/Desktop/Image Similarity/LUMCON Oyster Larvae Sampling 2024-05-02_1/data/ecotaxa_export_12759_20240726_1641_bivalve.tsv")
+# st.session_state["filepath_search"] = st.text_input("EcoTaxa path", "/Users/kevinadmin/Desktop/Image Similarity/LUMCON Oyster Larvae Sampling 2024-05-02_1/data/ecotaxa_export_12759_20240726_1641_bivalve.tsv")
+st.session_state["filepath_search"] = st.text_input("EcoTaxa path", "/Users/kevinadmin/Desktop/Image Similarity/Oyster Larvae Training Set")
 
 # Get data files
 try:
-    all_vecs, all_names, search_image_names = read_data(st.session_state["filepath_images"], st.session_state["filepath_search"])
+    all_vecs, all_names, search_image_vecs, search_image_names = read_data(st.session_state["filepath_images"], st.session_state["filepath_search"])
     st.subheader(st.session_state["filepath_images"])
     st.subheader(st.session_state["filepath_search"])
 except Exception as e:
@@ -36,9 +39,9 @@ except Exception as e:
 
 
 # %%
-def get_similar_images(vecs, names, search_image_name, n_images):
-    idx = int(np.argwhere(all_names == search_image_name).squeeze())
-    target_vec = vecs[idx]
+def get_similar_images(vecs, names, target_vec, n_images):
+    # idx = int(np.argwhere(all_names == search_image_name).squeeze())
+    # target_vec = vecs[idx]
     distances = cdist(target_vec[None, ...], vecs, metric='cosine').squeeze()
     top_image_indices = distances.argsort()[range(n_images)]
     top_image_names = names[top_image_indices]
@@ -50,10 +53,10 @@ def get_similar_images(vecs, names, search_image_name, n_images):
 
 # %% Get similar images for all search images
 @st.cache_data
-def get_all_similar_images(search_image_names, n_images):
+def get_all_similar_images(search_image_vecs, n_images):
     all_top_images = []
-    for search_image_name in search_image_names:
-        top_images = get_similar_images(all_vecs, all_names, search_image_name, n_images)
+    for search_image_vec in search_image_vecs:
+        top_images = get_similar_images(all_vecs, all_names, search_image_vec, n_images)
         all_top_images.append(top_images)
 
     all_top_images = pd.concat(all_top_images)
@@ -70,7 +73,7 @@ def get_all_similar_images(search_image_names, n_images):
 
     return all_top_images
 
-all_top_images = get_all_similar_images(search_image_names, 30)
+all_top_images = get_all_similar_images(search_image_vecs, 30)
 
 # %% Show matching images
 def display_images(image_names, n_rows, n_cols, id, image_distances=None):

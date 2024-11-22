@@ -79,15 +79,15 @@ images = all_image_matches
 fig, axes = plt.subplots(n_rows, n_cols, figsize=(24, 12))
 for i, ax in enumerate(axes.flat):
     try:
-        # image_name = all_image_matches.iloc[i]['name']
-        # image_name = images.iloc[i]['name']
-        image_name = images.iloc[np.random.randint(images.shape[0])]['name']
+        image_name = images.iloc[i]['name']
+        # image_name = images.iloc[np.random.randint(images.shape[0])]['name']
         image = Image.open(path.join(search_image_path, image_name + '.jpg'))
         ax.imshow(image)
         ax.get_xaxis().set_visible(False)
         ax.get_yaxis().set_visible(False)
         # ax.set_title(image_name)
-    except:
+    except Exception as e:
+        print(e)
         ax.axis('off')
 
 plt.tight_layout()

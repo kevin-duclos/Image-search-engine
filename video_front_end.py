@@ -8,8 +8,8 @@ from scipy.spatial.distance import cdist
 
 @st.cache_data
 def read_data(root):
-    all_vecs = np.load(f"{root}/all_vecs.npy")
-    all_names = np.load(f"{root}/all_names.npy")
+    all_vecs = np.load(f"{root}/data/all_vecs.npy")
+    all_names = np.load(f"{root}/data/all_names.npy")
     return all_vecs, all_names
 
 
@@ -37,7 +37,7 @@ try:
 except Exception as e:
     st.warning(e)
 
-n_rows = 25
+n_rows = 100
 n_cols = 4
 cols = []
 for _ in range(n_rows):
@@ -71,8 +71,12 @@ with st.form(key='image-form'):
     submit = st.form_submit_button()
     if submit:
         # st.write(checks)
-        selected_images = pd.Series(top_image_names[checks], name=f'similar images for {name}')
+        selected_images = pd.Series(top_image_names[checks], name=f'{name}')
         # selected_images = pd.Series(np.array(name, top_image_names[checks]), name='image names')
         # pd.concat([name, selected_images], ignore_index=True)
         st.caption('selected images:')
         st.dataframe(selected_images, hide_index=True)
+
+if st.button('export all'):
+    top_images = pd.Series(top_image_names, name=f'{name}')
+    st.dataframe(top_images, hide_index=True)

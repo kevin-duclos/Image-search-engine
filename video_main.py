@@ -5,15 +5,14 @@ import numpy as np
 from tqdm import tqdm
 
 import torch
-import torch.nn as nn
 import torchvision
 from torchvision import transforms
 
 
 device = 'mps'
-root = "/Users/kevinadmin/Desktop/Image Similarity/LUMCON Oyster Larvae Sampling 2024-05-02_1/"
-# images = os.listdir(root)
-images = glob(root + '*.jpg')
+root = '/Users/kevinadmin/Desktop/Image Similarity/Oyster Larvae Training Set'
+images = glob(os.path.join(root, '*.jpg'))
+print(f'{len(images)} images')
 
 os.environ["TORCH_HOME"] = "model/model_weights_edir"
 model = torchvision.models.resnet18(weights="DEFAULT")
